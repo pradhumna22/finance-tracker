@@ -17,9 +17,37 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
+async function verifyWebhookSignature(req: NextRequest, rawBody: string): Promise<boolean> {
+  const signature = req.headers.get('x-hub-signature-256')
+  const appSecret = process.env.WHATSAPP_APP_SECRET
+
+  if (!signature || !appSecret) return false
+
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody))
+  const expectedSig = 'sha256=' + Array.from(new Uint8Array(signatureBytes))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+
+  return signature === expectedSig
+}
+
 // POST: Receive WhatsApp messages
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  const rawBody = await req.text()
+
+  if (!await verifyWebhookSignature(req, rawBody)) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+
+  const body = JSON.parse(rawBody)
 
   try {
     const entry = body?.entry?.[0]
