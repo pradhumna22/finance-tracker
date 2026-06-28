@@ -12,7 +12,7 @@ export default function CategoryChart({ data }: { data: { name: string; value: n
         <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value">
           {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
         </Pie>
-        <Tooltip formatter={(v: number | string | undefined) => v != null ? `₹${Number(v).toLocaleString('en-IN')}` : '₹0'} />
+        <Tooltip formatter={(v: unknown) => v != null ? `₹${Number(v).toLocaleString('en-IN')}` : '₹0'} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
