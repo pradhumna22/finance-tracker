@@ -1,9 +1,5 @@
--- supabase/migrations/001_initial.sql
-
--- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- Transactions table
 create table transactions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade not null,
@@ -18,18 +14,15 @@ create table transactions (
   source text not null default 'whatsapp' check (source in ('whatsapp','manual'))
 );
 
--- Row-level security: users see only their own data
 alter table transactions enable row level security;
 create policy "Users own transactions"
   on transactions for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- Index for fast monthly queries
 create index idx_transactions_user_date on transactions(user_id, date desc);
 create index idx_transactions_type on transactions(user_id, type);
 
--- Monthly cache table
 create table monthly_cache (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade not null,
@@ -49,7 +42,6 @@ create policy "Users own monthly_cache"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- Phone number to user mapping (for WhatsApp bot)
 create table whatsapp_users (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id) on delete cascade not null unique,
@@ -60,4 +52,4 @@ create table whatsapp_users (
 alter table whatsapp_users enable row level security;
 create policy "Service role only"
   on whatsapp_users for all
-  using (false); -- Only accessible via service role key
+  using (false);
