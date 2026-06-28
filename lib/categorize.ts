@@ -28,8 +28,16 @@ const RULES: Rule[] = [
 ]
 
 function extractAmount(text: string): number {
-  const match = text.match(/\d+(\.\d{1,2})?/)
-  return match ? parseFloat(match[0]) : 0
+  // Remove commas from numbers like 1,500
+  const cleaned = text.replace(/,/g, '')
+  // Match number with optional k/l suffix (Indian: 1k=1000, 1l=100000)
+  const match = cleaned.match(/(\d+(?:\.\d{1,2})?)([kKlL])?/)
+  if (!match) return 0
+  const num = parseFloat(match[1])
+  const suffix = match[2]?.toLowerCase()
+  if (suffix === 'k') return num * 1000
+  if (suffix === 'l') return num * 100000
+  return num
 }
 
 export function categorize(message: string): ParsedMessage & { amount: number } {

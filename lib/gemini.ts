@@ -40,6 +40,12 @@ Respond with ONLY valid JSON, no markdown, no explanation.
 Example: {"amount":2500,"type":"expense","category":"Health","subcategory":"Supplements","description":"protein powder","date":"${today}"}
 `
 
+const VALID_TYPES = new Set(['expense', 'income', 'investment'])
+const VALID_CATEGORIES = new Set([
+  'Food', 'Health', 'Utilities', 'Transport', 'Shopping',
+  'Entertainment', 'Investment', 'Income', 'Other'
+])
+
 export async function parseMessage(message: string): Promise<ParsedMessage | null> {
   const today = new Date().toISOString().split('T')[0]
   try {
@@ -50,6 +56,8 @@ export async function parseMessage(message: string): Promise<ParsedMessage | nul
     const parsed = JSON.parse(text)
 
     if (!parsed.amount || !parsed.type || !parsed.category) return null
+    if (!VALID_TYPES.has(parsed.type)) return null
+    if (!VALID_CATEGORIES.has(parsed.category)) parsed.category = 'Other'
 
     return {
       amount: Number(parsed.amount),
