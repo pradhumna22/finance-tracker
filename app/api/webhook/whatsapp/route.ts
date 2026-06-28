@@ -43,7 +43,10 @@ async function verifyWebhookSignature(req: NextRequest, rawBody: string): Promis
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
-  if (!await verifyWebhookSignature(req, rawBody)) {
+  const sigValid = await verifyWebhookSignature(req, rawBody)
+  console.log('Webhook received, sig valid:', sigValid, 'body length:', rawBody.length)
+  if (!sigValid) {
+    console.log('Signature header:', req.headers.get('x-hub-signature-256'))
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
